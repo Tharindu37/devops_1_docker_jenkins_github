@@ -1,0 +1,37 @@
+pipeline {
+    agent any
+    
+    stages {
+        stage('SCM Checkout') {
+            steps {
+                retry(3) {
+                    git branch: 'main', url: 'https://github.com/Tharindu37/devops_1_docker_jenkins_github'
+                }
+            }
+        }
+        stage('Build Docker Image') {
+            steps {
+                sh 'docker build -t tharindu37/nodeapp-cuban:${BUILD_NUMBER} .'
+            }
+        }
+        stage('Login to Docker Hub') {
+            steps {
+                withCredentials([string(credentialsId: 'devops1-dockerhub-password', variable: 'devops1-dockerhub-password')]) {
+                    script {  
+                        sh "docker login -u tharindu37 -p '${devops1-dockerhub-password}'"
+                    }
+                }
+            }
+        }
+        stage('Push Image') {
+            steps {
+                sh "docker push tharindu37/nodeapp-cuban:${BUILD_NUMBER}"
+            }
+        }
+    }
+    post {
+        always {
+            sh 'docker logout'
+        }
+    }
+}
